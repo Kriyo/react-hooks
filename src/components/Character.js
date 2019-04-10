@@ -1,60 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
+import { useHttp } from '../hooks/http'
 import Summary from './Summary';
 
 const Character = props => {
-  const [loadedCharacter, setLoadedCharacter] = useState({})
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, fetchedData] = useHttp('https://swapi.co/api/people/' + props.selectedChar, [props.selectedChar])
+  let loadedCharacter = null
 
-  console.log('::> Rendering...')
-
-  const fetchData = () => {
-    console.log(
-      'Sending Http request for new character with id ' +
-        this.props.selectedChar
-    );
-    setIsLoading(true)
-
-    fetch('https://swapi.co/api/people/' + this.props.selectedChar)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Could not fetch person!');
-        }
-        return response.json();
-      })
-      .then(charData => {
-        const loadedCharacter = {
-          id: this.props.selectedChar,
-          name: charData.name,
-          height: charData.height,
-          colors: {
-            hair: charData.hair_color,
-            skin: charData.skin_color
-          },
-          gender: charData.gender,
-          movieCount: charData.films.length
-        };
-        setLoadedCharacter(loadedCharacter)
-        setIsLoading(false)
-      })
-      .catch(err => {
-        console.log(err)
-        setIsLoading(false)
-      })
+  if (fetchedData) {
+    loadedCharacter = {
+      id: props.selectedChar,
+      name: fetchedData.name,
+      height: fetchedData.height,
+      colors: {
+        hair: fetchedData.hair_color,
+        skin: fetchedData.skin_color
+      },
+      gender: fetchedData.gender,
+      movieCount: fetchedData.films.length
+    }
   }
 
   useEffect(() => {
-    fetchData()
-    return () => console.log('::> Cleaning Up')
-  }, [props.selectedChar])
+    return () => console.log('::> Component did unmount')
+  }, [])
 
-  useEffect(() => {
-    return() => console.log('::> Component did unmount')
-  })
+  let content = <p>Loading Character...</p>
 
-  let content = <p>Loading Character...</p>;
-
-  if (!isLoading && loadedCharacter.id) {
+  if (!isLoading && loadedCharacter) {
     content = (
       <Summary
         name={loadedCharacter.name}
@@ -65,10 +38,11 @@ const Character = props => {
         movieCount={loadedCharacter.movieCount}
       />
     );
-  } else if (!isLoading && !loadedCharacter.id) {
+  } else if (!isLoading && !loadedCharacter) {
     content = <p>Failed to fetch character.</p>;
   }
+
   return content
 }
 
-export default React.mem(Character)
+export default React.memo(Character)
